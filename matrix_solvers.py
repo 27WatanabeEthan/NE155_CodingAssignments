@@ -10,10 +10,10 @@ import time
 
 def gaussian_elimination(A, b):
     """
-    Will find the solution vector in a system of linear equations using Gaussian Elimination. 
+    Gaussian Elimination solver for a system Ax = b
 
-    :param A (np.ndarray): a nxn matrix
-    :param b (np.ndarray): a vector with n components
+    :param A (numpy.ndarray): a nxn matrix
+    :param b (numpy.ndarray): a vector with n components
     """
     # making sure that A is an nxn matrix and b is a 1xn vector
     try:
@@ -87,12 +87,68 @@ def gaussian_elimination(A, b):
     return sol
 
 def jacobi_iteration(A, b, guess, tolerance=1e-8):
-    pass
+    """
+    Jacobi iteration solver for a system Ax = b.
 
-def gauss_seidel(A, b, guess, tolerance=1e-8):
-    pass
+    Will take a guess and try to converge towards the solution within a tolerance.
 
-def sor(A, b, guess, omega, tolerance=1e-8):
+    Args:
+        A (numpy.ndarray): a nxn matrix 
+        b (numpy.ndarray): a vector with n components
+        guess (numpy.ndarray): a vector with n components
+        tolerance (float): a float of the error tolerance in the iterative method
+
+    Returns:
+        k (int): The number of iterations it took to reach a value within tolerance
+        next_iter (numpy.ndarray): x^{(k)} the approximate solution for the system
+    """
+    # making sure that A is an nxn matrix and b is a 1xn vector
+    try:
+        np.dot(A,b)
+    except:
+        raise Exception("Make sure that A is an nxn matrix and that b is a vector with n elements")
+    A = A.astype(float)
+    b = b.astype(float)
+    guess = guess.astype(float)
+    rows, cols = np.shape(A)
+
+    # lets decompose A into L, D, and U
+    L = np.zeros([rows, cols])
+    D = np.zeros([rows, cols])
+    D_inv = np.zeros([rows, cols])
+    U = np.zeros([rows, cols])
+    for row_index in range(rows):
+        for col_index in range(cols):
+            if row_index > col_index:
+                # when the row index is greater than the column index, it belongs in the L matrix
+                L[row_index, col_index] = A[row_index, col_index]
+            elif row_index < col_index:
+                # when the row index is less than the column index, it belongs in the U matrix
+                U[row_index, col_index] = A[row_index, col_index]
+            else:
+                # this will get all of the diagonal components of A and put them into D
+                D[row_index, col_index] = A[row_index, col_index]
+                D_inv[row_index, col_index] = A[row_index, col_index]**(-1)
+
+    iter1 = b - np.dot(L+U, guess)
+    iter1 = np.dot(D_inv, iter1)
+    iter_history = {0: guess,
+               1: iter1}
+
+    t = tolerance+1
+    k = 1
+    while t > tolerance:
+        next_iter = b - np.dot(L+U, iter_history.get(k))
+        next_iter = np.dot(D_inv, next_iter)
+        # print(f"iteration ({k+1}): {next_iter}")
+        iter_history.update({k+1: next_iter})
+
+        t = np.linalg.norm(next_iter - iter_history.get(k)) / np.linalg.norm(iter_history.get(k))
+        k += 1
+
+    return k, next_iter
+
+def gauss_seidel(A, b, guess, sor=1, tolerance=1e-8):
     pass
 
 def two_norm(vector):
@@ -111,4 +167,16 @@ if __name__ == '__main__':
         [0,  0,  0, -1,  4]
     ])
     b = np.array([100, 100, 100, 100, 100])
-    print(gaussian_elimination(A,b))
+    guess = np.zeros(5)
+
+    # print(gaussian_elimination(A,b))
+    iterations, solution = jacobi_iteration(A, b, guess) # tolerance = 1e-08
+    print(f"For jacobi iteration, it took {iterations} iterations to reach a solution of {solution}")
+    print()
+    iterations, solution = jacobi_iteration(A, b, guess, tolerance=1e-06) # tolerance = 1e-08
+    print(f"For jacobi iteration, it took {iterations} iterations to reach a solution of {solution}")
+    A0 = np.array([[3, -1, 1],
+                   [3, 6, 2],
+                   [3, 3, 7]])
+    b0 = np.array([1, 0, 4])
+    guess0 = np.array([0, 0, 0])
