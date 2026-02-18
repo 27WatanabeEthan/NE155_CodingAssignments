@@ -133,7 +133,7 @@ def jacobi_iteration(A, b, guess, tolerance=1e-8):
     iter1 = b - np.dot(L+U, guess)
     iter1 = np.dot(D_inv, iter1)
     iter_history = {0: guess,
-               1: iter1}
+                    1: iter1}
 
     t = tolerance+1
     k = 1
@@ -145,11 +145,58 @@ def jacobi_iteration(A, b, guess, tolerance=1e-8):
 
         t = np.linalg.norm(next_iter - iter_history.get(k)) / np.linalg.norm(iter_history.get(k))
         k += 1
-
     return k, next_iter
 
 def gauss_seidel(A, b, guess, sor=1, tolerance=1e-8):
-    pass
+    # making sure that A is an nxn matrix and b is a 1xn vector
+    try:
+        np.dot(A,b)
+    except:
+        raise Exception("Make sure that A is an nxn matrix and that b is a vector with n elements")
+    A = A.astype(float)
+    b = b.astype(float)
+    guess = guess.astype(float)
+    rows, cols = np.shape(A)
+
+    iter_history = {0: guess}
+    # sol1 = (1-sor)*iter_history.get(0)[0]
+    # sol1 += sor/A[0, 0] * (b[0] - A[])
+    next_iter = iter_history.get(0).copy()
+    for i in range(rows):
+        
+        sol_i = (1-sor)*iter_history.get(0)[i] # SOR only
+        sol_i += sor/A[i, i] * b[i]
+        
+        for j in range(cols):
+            if j == i:
+                pass
+            else:
+                sol_i -= sor/A[i, i] * A[i, j] * next_iter[j]
+        next_iter[i] = sol_i
+        # print(next_iter)
+    iter_history.update({1: next_iter})
+
+    t = tolerance + 1 # calculated tolerance
+    k = 1
+    while t > tolerance:
+        next_iter = iter_history.get(k).copy()
+        for i in range(rows):
+            sol_i = (1-sor)*iter_history.get(k)[i] # SOR only
+            sol_i += sor/A[i, i] * b[i]
+            for j in range(cols):
+                if j == i:
+                    pass
+                else:
+                    sol_i -= sor/A[i, i] * A[i, j] * next_iter[j]
+            next_iter[i] = sol_i
+            # print(next_iter)
+
+        t = np.linalg.norm(next_iter - iter_history.get(k)) / np.linalg.norm(iter_history.get(k))
+        k += 1    
+        iter_history.update({k: next_iter})
+        # print(t)
+        # print(f"After {k} iterations, we have a solution {next_iter}")
+    return k, next_iter
 
 def two_norm(vector):
     output = 0
@@ -170,13 +217,29 @@ if __name__ == '__main__':
     guess = np.zeros(5)
 
     # print(gaussian_elimination(A,b))
+
     iterations, solution = jacobi_iteration(A, b, guess) # tolerance = 1e-08
-    print(f"For jacobi iteration, it took {iterations} iterations to reach a solution of {solution}")
+    print(f"For Jacobi Iteration, it took {iterations} iterations to reach a solution of {solution}")
     print()
-    iterations, solution = jacobi_iteration(A, b, guess, tolerance=1e-06) # tolerance = 1e-08
-    print(f"For jacobi iteration, it took {iterations} iterations to reach a solution of {solution}")
+    iterations, solution = jacobi_iteration(A, b, guess, tolerance=1e-06) # tolerance = 1e-06
+    print(f"For Jacobi Iteration, it took {iterations} iterations to reach a solution of {solution}")
+    print()
+
+    iterations, solution = gauss_seidel(A, b, guess) # tolerance = 1e-08
+    print(f"For Gauss-Seidel, it took {iterations} iterations to reach a solution of {solution}")
+    print()
+    iterations, solution = gauss_seidel(A, b, guess, tolerance=1e-06) # tolerance = 1e-06
+    print(f"For Gauss-Seidel, it took {iterations} iterations to reach a solution of {solution}")
+    print()
+
+    iterations, solution = gauss_seidel(A, b, guess, sor=1.1) # tolerance = 1e-08
+    print(f"For SOR, it took {iterations} iterations to reach a solution of {solution}")
+    print()
+    iterations, solution = gauss_seidel(A, b, guess, sor=1.1, tolerance=1e-06) # tolerance = 1e-06
+    print(f"For SOR, it took {iterations} iterations to reach a solution of {solution}")
     A0 = np.array([[3, -1, 1],
                    [3, 6, 2],
                    [3, 3, 7]])
     b0 = np.array([1, 0, 4])
     guess0 = np.array([0, 0, 0])
+    gauss_seidel(A0, b0, guess0)
