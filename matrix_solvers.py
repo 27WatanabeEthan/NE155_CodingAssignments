@@ -3,17 +3,21 @@
 # Question 4
 
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import time
 
 
 def gaussian_elimination(A, b):
     """
-    Gaussian Elimination solver for a system Ax = b
+    Gaussian Elimination solver for a system Ax = b.
 
-    :param A (numpy.ndarray): a nxn matrix
-    :param b (numpy.ndarray): a vector with n components
+    Using row reduction methods, will obtain a solution for a system of equations Ax = b
+
+    Args:
+        A (numpy.ndarray): a nxn matrix 
+        b (numpy.ndarray): a vector with n components
+
+    Returns:
+        sol (numpy.ndarray): Solution to a given system of equations
+        aug_M (numpy.ndarray): The augmented matrix that was used to solve the system of equations
     """
     # making sure that A is an nxn matrix and b is a 1xn vector
     try:
@@ -45,18 +49,8 @@ def gaussian_elimination(A, b):
             better_row = aug_M[p_index, :]
 
             new_M[k, :] = better_row # replace the top row with the better row
-            # print(f"Row {k} has been replaced with row {p_index}")
-            # print(new_M)
 
             new_M[p_index, :] = aug_M[k,:] # now we can replace the old good row with the bad top row
-            # time.sleep(2)
-            # print(f"Row {p_index} has been replaced with row {k}")
-
-            # aug_M = new_M.astype(float)
-            # time.sleep(2)
-            # print(new_M)
-            # print("---------------------------------------")
-            # time.sleep(2)
 
             # recalculate s
             s = np.zeros(cols)
@@ -67,24 +61,20 @@ def gaussian_elimination(A, b):
             mult_factor = aug_M[l, k] / aug_M[k, k]
 
             aug_M[l, :] = aug_M[l, :] - aug_M[k, :] * mult_factor
-        # print(aug_M)
-        # time.sleep(2)
-    print(aug_M)
+
     # back substitution
     # works under the assumption that aug_M is now an upper triangular matrix with some row reduced b slapped onto it
     sol = np.zeros(rows)
     for i in range(1, rows+1):
         sol[-1*i] = aug_M[-1*i, -1] # start b_i
-        # print(f"We start with {aug_M[-1*i, -1]}")
         for j in range(cols):
             if j == rows - i:
                 pass
             else:
                 sol[-1*i] -= aug_M[-1*i, j] * sol[j] # subtract: b_i - a_i{-i j}*x_j
-                # print(f"Now we subtract what we currently have with {aug_M[-1*i, j]}*{sol[j]}")
+
         sol[-1*i] /= aug_M[-1*i, -1*i - 1]
-        # print(f"This results in solution {3 - i} to be: {sol[-1*i]}")
-    return sol
+    return sol, aug_M
 
 def jacobi_iteration(A, b, guess, tolerance=1e-8):
     """
@@ -148,6 +138,22 @@ def jacobi_iteration(A, b, guess, tolerance=1e-8):
     return k, next_iter
 
 def gauss_seidel(A, b, guess, sor=1, tolerance=1e-8):
+    """
+    Gauss-Seidel solver for a system Ax = b.
+
+    Will take a guess and try to converge towards the solution within a tolerance.
+
+    Args:
+        A (numpy.ndarray): a nxn matrix 
+        b (numpy.ndarray): a vector with n components
+        guess (numpy.ndarray): a vector with n components
+        sor (float): defaulted to 1 since sor=1 results in gauss-seidel method.
+        tolerance (float): a float of the error tolerance in the iterative method
+
+    Returns:
+        k (int): The number of iterations it took to reach a value within tolerance
+        next_iter (numpy.ndarray): x^{(k)} the approximate solution for the system
+    """
     # making sure that A is an nxn matrix and b is a 1xn vector
     try:
         np.dot(A,b)
@@ -159,11 +165,9 @@ def gauss_seidel(A, b, guess, sor=1, tolerance=1e-8):
     rows, cols = np.shape(A)
 
     iter_history = {0: guess}
-    # sol1 = (1-sor)*iter_history.get(0)[0]
-    # sol1 += sor/A[0, 0] * (b[0] - A[])
     next_iter = iter_history.get(0).copy()
+
     for i in range(rows):
-        
         sol_i = (1-sor)*iter_history.get(0)[i] # SOR only
         sol_i += sor/A[i, i] * b[i]
         
@@ -173,7 +177,6 @@ def gauss_seidel(A, b, guess, sor=1, tolerance=1e-8):
             else:
                 sol_i -= sor/A[i, i] * A[i, j] * next_iter[j]
         next_iter[i] = sol_i
-        # print(next_iter)
     iter_history.update({1: next_iter})
 
     t = tolerance + 1 # calculated tolerance
@@ -189,13 +192,10 @@ def gauss_seidel(A, b, guess, sor=1, tolerance=1e-8):
                 else:
                     sol_i -= sor/A[i, i] * A[i, j] * next_iter[j]
             next_iter[i] = sol_i
-            # print(next_iter)
 
         t = np.linalg.norm(next_iter - iter_history.get(k)) / np.linalg.norm(iter_history.get(k))
         k += 1    
         iter_history.update({k: next_iter})
-        # print(t)
-        # print(f"After {k} iterations, we have a solution {next_iter}")
     return k, next_iter
 
 def two_norm(vector):
@@ -216,8 +216,6 @@ if __name__ == '__main__':
     b = np.array([100, 100, 100, 100, 100])
     guess = np.zeros(5)
 
-    # print(gaussian_elimination(A,b))
-
     iterations, solution = jacobi_iteration(A, b, guess) # tolerance = 1e-08
     print(f"For Jacobi Iteration, it took {iterations} iterations to reach a solution of {solution}")
     print()
@@ -237,9 +235,7 @@ if __name__ == '__main__':
     print()
     iterations, solution = gauss_seidel(A, b, guess, sor=1.1, tolerance=1e-06) # tolerance = 1e-06
     print(f"For SOR, it took {iterations} iterations to reach a solution of {solution}")
-    A0 = np.array([[3, -1, 1],
-                   [3, 6, 2],
-                   [3, 3, 7]])
-    b0 = np.array([1, 0, 4])
-    guess0 = np.array([0, 0, 0])
-    gauss_seidel(A0, b0, guess0)
+    print()
+
+    solution, m_final = gaussian_elimination(A, b)
+    print(f"The true solution is {solution}")
