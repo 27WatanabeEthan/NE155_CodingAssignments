@@ -7,6 +7,19 @@ import matplotlib.pyplot as plt
 from matrix_solvers import gaussian_elimination
 
 def least_squares(x, y, degree=1):
+    """
+    Least Squares regression coefficient generator
+
+    Takes data points x and data points y and generates coefficients for an n-degree best fit line
+
+    Args:
+        x (numpy.ndarray): an array containing independent variable data points
+        y (numpy.ndarray): an array containing dependent variable data points
+        degree (int): degree of polynomial for best fit (defaulted at 1 for linear regression)
+
+    Returns:
+        coefs (numpy.ndarray): an array containg the coefficients for best fit function
+    """
     x = x.astype(float)
     y = y.astype(float)
     rows = len(x)
@@ -32,4 +45,3 @@ if __name__ == '__main__':
     for n in range(len(temps)):
         print(f"The temperature coefficient of reactivity at {temps[n]}K is {temp_coeffs[n]}")
         print()
-    
